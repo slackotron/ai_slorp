@@ -1,0 +1,63 @@
+---
+# Common variables for all Arista switches
+
+features:
+  - vrrp
+  - mlag
+  - bgp
+
+vlans:
+  10: USERS_VLAN
+  20: SERVERS_VLAN
+  30: VOICE_VLAN
+  40: MGMT_VLAN
+
+ntp_servers:
+  - 10.0.0.10
+  - 10.0.0.11
+
+aaa_config:
+  authentication_order:
+    - group
+    - tacacs+
+    - local
+  tacacs_servers:
+    - 10.0.0.20
+    - 10.0.0.21
+  tacacs_key: MyAristaTacacsKey # Ideally, this would be in Ansible Vault
+
+snmp_config:
+  community:
+    string: public
+    view: all
+  location: Datacenter A
+  contact: network_team@example.com
+
+local_users:
+  admin:
+    password: "$6$rounds=5000$saltsalt$hXp9J7.i1d4p2a3m4n5o6q7r8s9t0u1v2w3x4y5z." # Hashed password example
+    privilege: 15
+  monitor:
+    password: "$6$rounds=5000$saltsalt$yZg2H5.j3k6l7m8n9p0q1r2s3t4u5v6w7x8y9z0a."
+    privilege: 1
+
+management:
+  ssh: true
+  ssh_ip_access_group: ACL_SSH_MGMT
+  telnet: false
+
+access_lists:
+  ACL_SSH_MGMT:
+    - permit ip 192.168.1.0/24 any
+    - permit ip 10.0.40.0/24 any # Allow access from management VLAN
+    - deny ip any any
+
+banner: |
+  Unauthorized access is strictly prohibited. Your activity may be monitored.
+
+# MLAG config (often specific, but some parts can be grouped)
+mlag_config:
+  domain_id: 100
+  local_interface_vlan: 4094 # Common Arista MLAG Management VLAN
+  reload_delay_mlag: 300
+  reload_delay_non_mlag: 300
