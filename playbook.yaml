@@ -1,0 +1,34 @@
+---
+- name: Generate and Apply Arista EOS Configurations
+  hosts: arista_switches
+  gather_facts: false # Not typically needed for network config generation
+
+  tasks:
+    - name: Ensure output directory exists
+      ansible.builtin.file:
+        path: generated_configs
+        state: directory
+      run_once: true # Only create the directory once, even if multiple hosts
+
+    - name: Render full configuration template for {{ inventory_hostname }}
+      ansible.builtin.template:
+        src: templates/arista_config_template.j2
+        dest: "generated_configs/{{ inventory_hostname }}_config.cfg"
+      delegate_to: localhost # Render the template on the Ansible control node
+
+    - name: Display rendered configuration (optional)
+      ansible.builtin.debug:
+        msg: |
+          --- Configuration for {{ inventory_hostname }} ---
+          {{ lookup('file', 'generated_configs/' + inventory_hostname + '_config.cfg') }}
+      when: ansible_verbosity > 0 # Only display if running with -v
+
+    # This task would apply the configuration to the device
+    # Uncomment and configure with appropriate connection details and `ansible_network_os`
+    # - name: Push generated configuration to {{ inventory_hostname }}
+    #   arista.eos.eos_config:
+    #     src: "generated_configs/{{ inventory_hostname }}_config.cfg"
+    #     save_when_changed: true
+    #     backup: true
+    #   ignore_errors: true # You might want to handle errors more gracefully in production
+    #   when: false # Set to 'true' to actually push the config
