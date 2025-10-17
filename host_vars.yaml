@@ -1,0 +1,103 @@
+---
+# Host-specific variables for ARISTA-LEAF-01
+
+hostname: ARISTA-LEAF-01
+
+interfaces:
+  Ethernet1:
+    description: Uplink to SPINE-A
+    mode: trunk
+    trunk_vlans: 10-30
+    native_vlan: 1
+    no_shutdown: true
+  Ethernet2:
+    description: Server Access Port A
+    mode: access
+    access_vlan: 20
+    no_shutdown: true
+  Ethernet3:
+    description: MLAG Port to Server A-1
+    mode: access
+    access_vlan: 10
+    mlag_id: 1
+    no_shutdown: true
+  Ethernet4:
+    description: MLAG Port to Server A-2
+    mode: access
+    access_vlan: 10
+    mlag_id: 2
+    no_shutdown: true
+  Ethernet5:
+    description: Port for MLAG Peer Link to ARISTA-LEAF-02
+    port_channel: 100
+    channel_mode: active
+    no_shutdown: true
+
+port_channels:
+  100:
+    description: MLAG Peer Link
+    no_shutdown: true
+    mode: trunk
+    trunk_vlans: 1-4094
+    native_vlan: 1
+
+svis:
+  10:
+    description: SVI for Users
+    ip_address: 192.168.10.1/24
+    no_shutdown: true
+    ip_virtual_router: 0000.0000.0001
+    vrrp:
+      10:
+        ip_address: 192.168.10.254
+        priority: 150
+        preempt: true
+  20:
+    description: SVI for Servers
+    ip_address: 192.168.20.1/24
+    no_shutdown: true
+  40:
+    description: Management SVI
+    ip_address: 10.0.40.1/24
+    no_shutdown: true
+
+routing:
+  ospf:
+    1:
+      router_id: 1.1.1.1
+      areas:
+        0:
+          networks:
+            - address: 192.168.10.0/24
+            - address: 192.168.20.0/24
+  bgp:
+    65001:
+      router_id: 10.0.0.1
+      log_neighbor_changes: true
+      graceful_restart: true
+      graceful_restart_time: 360
+      address_families:
+        ipv4 unicast:
+          networks:
+            - 192.168.10.0/24
+            - 192.168.20.0/24
+      neighbors:
+        10.0.0.2:
+          remote_as: 65002
+          update_source: Loopback0
+          description: BGP Peer to SPINE-2
+          address_families:
+            ipv4 unicast:
+              send_community: true
+
+mlag_config:
+  peer_address: 172.16.2.2 # Peer IP for MLAG
+  peer_link_po_id: 100
+
+loopbacks:
+  0:
+    description: Router-ID Loopback
+    ip_address: 1.1.1.1/32
+  1:
+    description: MLAG Keepalive Source
+    ip_address: 172.16.2.1/32
